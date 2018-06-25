@@ -45,10 +45,11 @@ def get_file_hash(file, chunk_size=1024, hash_type=hashlib.sha1, chunk_limit=Non
     return file_hash
 
 
-# create a dictionary mapping files by first chunk to their paths
-def make_by_first_chunk_dict(by_size_dict, chunk_size, hash_type):
-    by_first_chunk_dict = {}
+# create a list of mappings, mapping files by first chunk to their paths
+def make_by_first_chunk_list(by_size_dict, chunk_size, hash_type):
+    by_first_chunk_list = []
     for _, files in by_size_dict.items():
+        by_first_chunk_dict = {}
         if len(files) >= 2:
             for file in files:
                 file_hash = get_file_hash(file, chunk_size, hash_type, 1)
@@ -59,35 +60,41 @@ def make_by_first_chunk_dict(by_size_dict, chunk_size, hash_type):
                 else:
                     by_first_chunk_dict[file_hash] = [file]
 
-    return by_first_chunk_dict
+        by_first_chunk_list.append(by_first_chunk_dict)
+    return by_first_chunk_list
 
 
-# create a dictionary mapping a files by their full hash to their paths
-def make_duplicates_dict(by_first_chunk_dict, chunk_size, hash_type):
-    duplicates_dict = {}
-    for __, files in by_first_chunk_dict.items():
-        if len(files) >= 2:
-            for file in files:
-                file_hash = get_file_hash(file, chunk_size, hash_type)
+# create a list of mappings, mapping files by their full hash to their paths
+def make_duplicates_list(by_first_chunk_list, chunk_size, hash_type):
+    duplicates_list = []
+    for dict in by_first_chunk_list:
+        duplicates_dict = {}
+        for _, files in dict.items():
+            if len(files) >= 2:
+                for file in files:
+                    file_hash = get_file_hash(file, chunk_size, hash_type)
 
-                duplicates = duplicates_dict.get(file_hash)
-                if duplicates:
-                    duplicates.append(file)
-                else:
-                    duplicates_dict[file_hash] = [file]
+                    duplicates = duplicates_dict.get(file_hash)
+                    if duplicates:
+                        duplicates.append(file)
+                    else:
+                        duplicates_dict[file_hash] = [file]
 
-    return duplicates_dict
+        duplicates_list.append(duplicates_dict)
+
+    return duplicates_list
 
 
 # print the actual duplicates
-def output_duplicates(duplicates_dict):
+def output_duplicates(duplicates_list):
     duplicate_group_num = 1
-    for _, files in duplicates_dict.items():
-        print("Duplicate files group #%d. These files are duplicates:" % duplicate_group_num)
-        for file in files:
-            print(file)
-        print("")
-        duplicate_group_num += 1
+    for dict in duplicates_list:
+        for _, files in dict.items():
+            print("Duplicate files group #%d. These files are duplicates:" % duplicate_group_num)
+            for file in files:
+                print(file)
+            print("")
+            duplicate_group_num += 1
 
 
 def check_duplicate_files(root, chunk_size, hash_type):
@@ -98,15 +105,15 @@ def check_duplicate_files(root, chunk_size, hash_type):
     # For each collection of similar sized files, create a hash from each of their first
     # chunks and map these hashes to their paths.
     # File paths with similar first chunk hashes are stored in a list in the same bucket.
-    by_first_chunk_dict = make_by_first_chunk_dict(by_size_dict, chunk_size, hash_type)
-
+    by_first_chunk_list = make_by_first_chunk_list(by_size_dict, chunk_size, hash_type)
+    del by_size_dict
     # For each collection of similar first chunk hashed files, create a full hash for each file,
     # and map these hashes to their paths
     # File paths with similar full hashes are stored in a list in the same bucket.
-    duplicates_dict = make_duplicates_dict(by_first_chunk_dict, chunk_size, hash_type)
-
+    duplicates_list = make_duplicates_list(by_first_chunk_list, chunk_size, hash_type)
+    del by_first_chunk_list
     # Iterate over all buckets and output the similar file paths.
-    output_duplicates(duplicates_dict)
+    output_duplicates(duplicates_list)
 
 
 # constants
