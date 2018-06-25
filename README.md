@@ -7,15 +7,17 @@ It is obvious that files with different sizes are not similar, so this step narr
 by eliminating the first possible way that makes files distinct.
 
 2. Next the script iterates over the buckets in the dictionary created in step 1, and hashes each file's first
-1KBs, putting each file's full path in the appropriate bucket.
+1KBs, putting each file's full path in the appropriate bucket. The resulting dictionary from each size bucket is added
+to a list of dictionaries.
 This step is a bit of an optimization. Since if two files differ on their first chunk, we shouldn't look
 into the other chunks.
 
 3. Now the actual comparison occurs - the script will now iterate over the buckets created in step 2, and hashes each
 file entirely. If two file hashes are equal in this step, it means the files are entirely identical.
+The resulting dictionary from each first chunk bucket is added to a list of dictionaries.
 
 4. The script will iterate over the each bucket from step 3 (each bucket represents duplicate files), and prints all
-duplicate files by bucket.
+duplicate files from the resulting list of dictionaries.
 
 # Requirements
 - Python 3.2 or higher.
