@@ -64,11 +64,10 @@ def make_by_first_chunk_list(by_size_dict, chunk_size, hash_type):
     return by_first_chunk_list
 
 
-# create a list of mappings, mapping files by their full hash to their paths
-def make_duplicates_list(by_first_chunk_list, chunk_size, hash_type):
-    duplicates_list = []
+# create a  mapping of files by their full hash to their paths
+def make_duplicates_dict(by_first_chunk_list, chunk_size, hash_type):
+    duplicates_dict = {}
     for dict in by_first_chunk_list:
-        duplicates_dict = {}
         for _, files in dict.items():
             if len(files) >= 2:
                 for file in files:
@@ -80,21 +79,18 @@ def make_duplicates_list(by_first_chunk_list, chunk_size, hash_type):
                     else:
                         duplicates_dict[file_hash] = [file]
 
-        duplicates_list.append(duplicates_dict)
-
-    return duplicates_list
+    return duplicates_dict
 
 
 # print the actual duplicates
 def output_duplicates(duplicates_list):
     duplicate_group_num = 1
-    for dict in duplicates_list:
-        for _, files in dict.items():
-            print("Duplicate files group #%d. These files are duplicates:" % duplicate_group_num)
-            for file in files:
-                print(file)
-            print("")
-            duplicate_group_num += 1
+    for _, files in duplicates_list.items():
+        print("Duplicate files group #%d. These files are duplicates:" % duplicate_group_num)
+        for file in files:
+            print(file)
+        print("")
+        duplicate_group_num += 1
 
 
 def check_duplicate_files(root, chunk_size, hash_type):
@@ -110,7 +106,7 @@ def check_duplicate_files(root, chunk_size, hash_type):
     # For each collection of similar first chunk hashed files, create a full hash for each file,
     # and map these hashes to their paths
     # File paths with similar full hashes are stored in a list in the same bucket.
-    duplicates_list = make_duplicates_list(by_first_chunk_list, chunk_size, hash_type)
+    duplicates_list = make_duplicates_dict(by_first_chunk_list, chunk_size, hash_type)
     del by_first_chunk_list
     # Iterate over all buckets and output the similar file paths.
     output_duplicates(duplicates_list)
